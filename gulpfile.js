@@ -19,8 +19,9 @@ var gulp = require('gulp'),
       exec = require('child_process').exec,
       runSequence = require('run-sequence'),
       browserSync = require('browser-sync').create(),
-      reload = browserSync.reload;
-
+      reload = browserSync.reload,
+      gutil = require('gulp-util'),
+      vendor = require('gulp-concat-vendor');
 
 // Relative paths function
 var pathsConfig = function (appName) {
@@ -34,6 +35,7 @@ var pathsConfig = function (appName) {
     fonts: this.app + '/static/fonts',
     images: this.app + '/static/images',
     js: this.app + '/static/js',
+    node_modules: './node_modules'
   }
 };
 
@@ -43,10 +45,14 @@ var paths = pathsConfig();
 		//Tasks//
 ////////////////////////////////
 
-// Styles autoprefixing and minification
+// Styles autoprefixing and minification (SASS)
 gulp.task('styles', function() {
   return gulp.src(paths.sass + '/project.scss')
-    .pipe(sass().on('error', sass.logError))
+    .pipe(sass({
+        "includePaths": [
+          "./node_modules/bootstrap-sass/assets/stylesheets/"
+        ]
+      }).on('error', sass.logError))
     .pipe(plumber()) // Checks for errors
     .pipe(autoprefixer({browsers: ['last 2 version']})) // Adds vendor prefixes
     .pipe(pixrem())  // add fallbacks for rem units
@@ -57,11 +63,19 @@ gulp.task('styles', function() {
 });
 
 // Javascript minification
-gulp.task('scripts', function() {
+gulp.task('scripts', ['vendors'], function() {
   return gulp.src(paths.js + '/project.js')
     .pipe(plumber()) // Checks for errors
     .pipe(uglify()) // Minifies the js
     .pipe(rename({ suffix: '.min' }))
+    .pipe(gulp.dest(paths.js));
+});
+
+// Javascript vendors minification
+gulp.task('vendors', function(){
+  return gulp.src(['./node_modules/jquery/dist/jquery.js',
+                  './node_modules/bootstrap-sass/assets/javascripts/bootstrap.js'])
+    .pipe(vendor('vendor.js'))
     .pipe(gulp.dest(paths.js));
 });
 
@@ -72,13 +86,20 @@ gulp.task('imgCompression', function(){
     .pipe(gulp.dest(paths.images))
 });
 
-// Run django server
-gulp.task('runServer', function() {
-  exec('python manage.py runserver', function (err, stdout, stderr) {
-    console.log(stdout);
-    console.log(stderr);
-  });
+// Move node_modules fonts
+gulp.task('fonts', function() {
+    return gulp.src('./node_modules/font-awesome/fonts/**.*')
+            .pipe(gulp.dest(paths.fonts));
 });
+
+
+// Run django server
+// gulp.task('runServer', function() {
+//   exec('python manage.py runserver', function (err, stdout, stderr) {
+//     console.log(stdout);
+//     console.log(stderr);
+//   });
+// });
 
 // Browser sync server for live reload
 gulp.task('browserSync', function() {
@@ -90,7 +111,7 @@ gulp.task('browserSync', function() {
 
 // Default task
 gulp.task('default', function() {
-    runSequence(['styles', 'scripts', 'imgCompression'], 'runServer', 'browserSync');
+    runSequence(['fonts', 'styles', 'scripts', 'imgCompression'],'browserSync');
 });
 
 ////////////////////////////////
@@ -99,8 +120,8 @@ gulp.task('default', function() {
 
 // Watch
 gulp.task('watch', ['default'], function() {
-
   gulp.watch(paths.sass + '/*.scss', ['styles']);
+  gulp.watch(paths.fonts + '/*', ['fonts']);
   gulp.watch(paths.js + '/*.js', ['scripts']).on("change", reload);
   gulp.watch(paths.images + '/*', ['imgCompression']);
   gulp.watch(paths.templates + '/**/*.html').on("change", reload);

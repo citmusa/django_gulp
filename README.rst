@@ -65,24 +65,24 @@ In development, it is often nice to be able to see emails that are being sent fr
 
 .. _mailhog: https://github.com/mailhog/MailHog
 
-To start the service, make sure you have nodejs installed, and then type the following::
-
-    $ npm install
-    $ grunt serve
-
-(After the first run you only need to type ``grunt serve``) This will start an email server that listens on ``127.0.0.1:1025`` in addition to starting your Django project and a watch task for live reload.
-
-To view messages that are sent by your application, open your browser and go to ``http://127.0.0.1:8025``
-
-The email server will exit when you exit the Grunt task on the CLI with Ctrl+C.
-
-
+    Download the latest release `https://github.com/mailhog/MailHog/releases`
+    Rename the executable to mailhog and copy it to the root of your project directory
+    Make sure it is executable (e.g. `chmod +x mailhog`)
+    Execute mailhog from the root of your project in a new terminal window (e.g. `./mailhog`)
+    All emails generated from your django app can be seen on ``http://127.0.0.1:8025/``
 
 
 Deployment
 ----------
 
-The following details how to deploy this application.
+Start django runserver and Mailog in different terminal windows
+    ./mailhog
+    python manage.py runserver
+
+Start the assets complilation flow from a MacOS environment:
+    gulp watch
+It will open a new browser window with your site running
+Each change will trigger assets compilation, browser reload, if you don't want this behavior use `gulp` instead
 
 
 
